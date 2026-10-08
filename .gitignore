@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+uploads/
+geo_measure.db
+*.sqlite
+sample_data/sample_shp/
+sample_data/sample.kml
+sample_data/sample_shapefile.zip
+

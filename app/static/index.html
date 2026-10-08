@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Geospatial File Measurement API</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIINfQow8WlYJtSLq4fzHCn3gqH4p9Y8r+U="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="/static/css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div>
+        <h1>Geospatial File Measurement API</h1>
+        <p>Upload a Shapefile (.zip) or KML to measure areas and lengths</p>
+      </div>
+      <a class="docs-link" href="/docs">API docs</a>
+    </header>
+
+    <main class="shell">
+      <section class="panel upload-panel" aria-labelledby="upload-title">
+        <div class="panel-heading">
+          <h2 id="upload-title">Upload file</h2>
+          <button id="sampleButton" class="secondary" type="button">Try a sample file</button>
+        </div>
+        <div id="dropZone" class="drop-zone" role="button" tabindex="0" aria-describedby="upload-help">
+          <input id="fileInput" type="file" accept=".zip,.kml" hidden />
+          <strong>Drop a .zip or .kml file here</strong>
+          <span id="upload-help">or browse from your computer</span>
+          <button id="browseButton" type="button">Browse file</button>
+        </div>
+        <div class="upload-row">
+          <p id="selectedFile" class="muted">No file selected</p>
+          <button id="uploadButton" type="button" disabled>Upload &amp; Measure</button>
+        </div>
+        <div id="progress" class="progress" hidden><span></span></div>
+      </section>
+
+      <div id="alertHost" aria-live="polite"></div>
+      <p id="liveStatus" class="sr-only" aria-live="polite"></p>
+
+      <section id="emptyState" class="empty-state">
+        <h2>Ready when your file is.</h2>
+        <p>Measurements, map layers, export buttons, and feature details will appear here after upload.</p>
+      </section>
+
+      <section id="results" hidden>
+        <section class="grid two">
+          <article class="panel" aria-labelledby="file-title">
+            <h2 id="file-title">File info</h2>
+            <dl class="file-info">
+              <div><dt>Filename</dt><dd id="fileName">-</dd></div>
+              <div><dt>Status</dt><dd><span id="fileStatus" class="badge">-</span></dd></div>
+              <div><dt>Features</dt><dd id="featureCount">-</dd></div>
+              <div><dt>Source CRS</dt><dd id="sourceCrs">-</dd></div>
+            </dl>
+            <p id="fileError" class="error-text" hidden></p>
+          </article>
+
+          <article class="panel" aria-labelledby="units-title">
+            <h2 id="units-title">Units</h2>
+            <div class="controls">
+              <label>Area
+                <select id="areaUnit">
+                  <option value="m2">m²</option>
+                  <option value="hectares">hectares</option>
+                  <option value="km2">km²</option>
+                  <option value="acres">acres</option>
+                </select>
+              </label>
+              <label>Length
+                <select id="lengthUnit">
+                  <option value="m">m</option>
+                  <option value="km">km</option>
+                  <option value="miles">miles</option>
+                  <option value="feet">feet</option>
+                </select>
+              </label>
+            </div>
+            <div class="exports">
+              <button id="csvButton" class="secondary" type="button">Download CSV</button>
+              <button id="geojsonButton" class="secondary" type="button">Download GeoJSON</button>
+            </div>
+          </article>
+        </section>
+
+        <section class="summary-grid" aria-label="Measurement summary">
+          <article><span>Total area</span><strong id="totalArea">-</strong></article>
+          <article><span>Total length</span><strong id="totalLength">-</strong></article>
+          <article><span>Polygons</span><strong id="polygonCount">0</strong></article>
+          <article><span>Lines</span><strong id="lineCount">0</strong></article>
+          <article><span>Points</span><strong id="pointCount">0</strong></article>
+          <article><span>Unsupported</span><strong id="unsupportedCount">0</strong></article>
+        </section>
+
+        <section class="panel map-panel" aria-labelledby="map-title">
+          <div class="panel-heading">
+            <h2 id="map-title">Map</h2>
+            <div class="legend" aria-label="Map legend">
+              <span class="poly">Polygon</span><span class="line">Line</span><span class="point">Point</span><span class="bad">Unsupported</span>
+            </div>
+          </div>
+          <div id="map"></div>
+        </section>
+
+        <section class="panel table-panel" aria-labelledby="table-title">
+          <div class="panel-heading table-tools">
+            <h2 id="table-title">Measurements</h2>
+            <label>Filter
+              <input id="textFilter" type="search" placeholder="name, type, property" />
+            </label>
+            <label>Geometry
+              <select id="typeFilter">
+                <option value="">All</option>
+                <option value="Polygon">Polygons</option>
+                <option value="LineString">Lines</option>
+                <option value="Point">Points</option>
+                <option value="GeometryCollection">Geometry collections</option>
+              </select>
+            </label>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th><th>Geometry</th><th>Area</th><th>Length</th><th>Status</th><th>Projected CRS</th><th>Properties</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button id="prevButton" class="secondary" type="button">Previous</button>
+            <span id="pageInfo">-</span>
+            <button id="nextButton" class="secondary" type="button">Next</button>
+          </div>
+        </section>
+
+        <details class="panel explanation">
+          <summary>How was this measured?</summary>
+          <p>Features in latitude and longitude are projected into a metric coordinate system before measuring. Most features use their own UTM zone, while polar features use a polar stereographic CRS. The table also includes geodesic cross-check values from the WGS84 ellipsoid.</p>
+        </details>
+      </section>
+    </main>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script type="module" src="/static/js/app.js"></script>
+  </body>
+</html>
+

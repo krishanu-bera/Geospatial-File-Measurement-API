@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Schema name="sample" id="sample">
+	<SimpleField name="kind" type="string"></SimpleField>
+</Schema>
+<Folder><name>sample</name>
+  <Placemark>
+	<name>Equator square</name>
+	<description>polygon</description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <Polygon><outerBoundaryIs><LinearRing><coordinates>0,0 0.008983,0.0 0.008983,0.008983 0.0,0.008983 0,0</coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+	<name>Short line</name>
+	<description>line</description>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <LineString><coordinates>0.02,0.0 0.028983,0.0</coordinates></LineString>
+  </Placemark>
+  <Placemark>
+	<name>Reference point</name>
+	<description>point</description>
+      <Point><coordinates>0.04,0.004</coordinates></Point>
+  </Placemark>
+</Folder>
+</Document></kml>
